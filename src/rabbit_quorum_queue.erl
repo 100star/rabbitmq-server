@@ -96,11 +96,12 @@
     rabbit_fifo_client:state().
 init_state({Name, _}, QName) ->
     {ok, SoftLimit} = application:get_env(rabbit, quorum_commands_soft_limit),
-    {ok, #amqqueue{pid = Leader, quorum_nodes = Nodes0}} =
+    {ok, #amqqueue{pid = Leader, quorum_nodes = Nodes}} =
         rabbit_amqqueue:lookup(QName),
     %% Ensure the leader is listed first
-    Nodes = [Leader | lists:delete(Leader, Nodes0)],
-    rabbit_fifo_client:init(QName, Nodes, SoftLimit,
+    Servers0 = [{Name, N} || N <- Nodes],
+    Servers = [Leader | lists:delete(Leader, Servers0)],
+    rabbit_fifo_client:init(QName, Servers, SoftLimit,
                             fun() -> credit_flow:block(Name), ok end,
                             fun() -> credit_flow:unblock(Name), ok end).
 
